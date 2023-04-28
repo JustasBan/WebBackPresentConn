@@ -1,6 +1,15 @@
+using Microsoft.EntityFrameworkCore;
+using WebBackPresentConn.Services.Implementations;
+using WebBackPresentConn.Services.Interfaces;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+builder.Services.AddDbContext<PizzaOrderContext>(options =>
+        options.UseInMemoryDatabase("PizzaOrders"));
+
+builder.Services.AddScoped<IPizzaOrderService, PizzaOrderService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
