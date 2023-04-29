@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using PizzaOrderApi.Services.Exceptions;
 using WebBackPresentConn.Models.Entities;
+using WebBackPresentConn.Models.Enums;
 using WebBackPresentConn.Services.Interfaces;
 
 namespace WebBackPresentConn.Controllers
@@ -24,8 +26,19 @@ namespace WebBackPresentConn.Controllers
                 return BadRequest(ModelState);
             }
 
-            var createdPizzaOrder = await _pizzaOrderService.AddPizzaOrderAsync(pizzaOrder);
-            return CreatedAtAction(nameof(GetPizzaOrderById), new { id = createdPizzaOrder.Id }, createdPizzaOrder);
+            try
+            {
+                var createdPizzaOrder = await _pizzaOrderService.AddPizzaOrderAsync(pizzaOrder);
+                return CreatedAtAction(nameof(GetPizzaOrderById), new { id = createdPizzaOrder.Id }, createdPizzaOrder);
+            }
+            catch (NoToppingsException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch(ArgumentOutOfRangeException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet]
@@ -46,5 +59,21 @@ namespace WebBackPresentConn.Controllers
 
             return Ok(pizzaOrder);
         }
+
+        [HttpPost("estimate")]
+        public async Task<IActionResult> EstimateCost(PizzaSize size, List<Topping> toppings)
+        {
+            var estimatedCost = await _pizzaOrderService.EstimateCostAsync(size, toppings);
+            return Ok(estimatedCost);
+        }
+
+        [HttpPost("sizes")]
+        [HttpGet("sizes")]
+public IActionResult GetPizzaSizes()
+{
+    return Ok(_pizzaOrderService.GetPizzaSizeNames());
+}
+
+
     }
 }
