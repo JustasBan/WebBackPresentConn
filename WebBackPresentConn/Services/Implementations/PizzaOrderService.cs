@@ -75,7 +75,7 @@ namespace WebBackPresentConn.Services.Implementations
             decimal baseCost = size switch
             {
                 PizzaSize.Small => 8,
-                PizzaSize.Medium => 10.0,
+                PizzaSize.Medium => 10m,
                 PizzaSize.Large => 12,
                 _ => throw new ArgumentOutOfRangeException()
             };
