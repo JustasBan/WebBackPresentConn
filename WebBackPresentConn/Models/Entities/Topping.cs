@@ -1,4 +1,6 @@
 ﻿
+using Microsoft.EntityFrameworkCore;
+using PizzaOrderApi.Models.Entities;
 using System.Text.Json.Serialization;
 
 namespace WebBackPresentConn.Models.Entities
@@ -9,6 +11,6 @@ namespace WebBackPresentConn.Models.Entities
         public string Name { get; set; }
 
         [JsonIgnore]
-        public ICollection<PizzaOrder>? PizzaOrders { get; set; }
+        public ICollection<PizzaOrderTopping>? PizzaOrderToppings { get; set; }
     }
 }

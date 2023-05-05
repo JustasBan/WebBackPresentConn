@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using PizzaOrderApi.Models.Entities;
 using WebBackPresentConn.Models.Entities;
 
 public class PizzaOrderContext : DbContext
@@ -12,8 +13,21 @@ public class PizzaOrderContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<PizzaOrder>()
-            .HasMany(po => po.Toppings)
-            .WithMany(t => t.PizzaOrders);
+        modelBuilder.Entity<PizzaOrderTopping>()
+            .HasKey(pt => pt.Id);
+
+        modelBuilder.Entity<PizzaOrderTopping>()
+            .HasOne(pt => pt.PizzaOrder)
+            .WithMany(po => po.PizzaOrderToppings)
+            .HasForeignKey(pt => pt.PizzaOrderId);
+
+        modelBuilder.Entity<PizzaOrderTopping>()
+            .HasOne(pt => pt.Topping)
+            .WithMany(t => t.PizzaOrderToppings)
+            .HasForeignKey(pt => pt.ToppingId);
+
+        modelBuilder.Entity<Topping>()
+            .HasIndex(t => t.Name)
+            .IsUnique();
     }
 }

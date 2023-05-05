@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using PizzaOrderApi.Models.Entities;
 using PizzaOrderApi.Services.Exceptions;
 using PizzaOrderApi.Services.Interfaces;
+using System.Drawing;
 using WebBackPresentConn.Models.Entities;
 using WebBackPresentConn.Models.Enums;
 using WebBackPresentConn.Services.Interfaces;
@@ -26,9 +28,9 @@ namespace WebBackPresentConn.Services.Implementations
             }
 
             var allToppings = await _toppingsService.GetAllToppingsAsync();
-            var allToppingIds = allToppings.Select(t => t.Id).ToHashSet();
+            var allToppingIds = allToppings.Select(t => t.Id).ToList();
 
-            var validToppings = new List<Topping>();
+            var validToppings = new List<PizzaOrderTopping>();
 
             foreach (var toppingId in pizzaOrder.ToppingIds)
             {
@@ -39,11 +41,16 @@ namespace WebBackPresentConn.Services.Implementations
                     throw new InvalidToppingException(new Topping { Id = toppingId });
                 }
 
-                validToppings.Add(existingTopping);
+                validToppings.Add(new PizzaOrderTopping { ToppingId = existingTopping.Id });
             }
 
-            pizzaOrder.Toppings = validToppings;
-            decimal totalCost = CalculatePizzaCost(pizzaOrder.Size, pizzaOrder.Toppings.Count);
+            if (pizzaOrder.Size == PizzaSize.None)
+            { 
+                throw new NoSizeException();
+            }
+
+            pizzaOrder.PizzaOrderToppings = validToppings;
+            decimal totalCost = CalculatePizzaCost(pizzaOrder.Size, pizzaOrder.PizzaOrderToppings.Count);
             pizzaOrder.TotalCost = totalCost;
             _context.PizzaOrders.Add(pizzaOrder);
             await _context.SaveChangesAsync();
@@ -51,33 +58,105 @@ namespace WebBackPresentConn.Services.Implementations
             return pizzaOrder;
         }
 
+        public async Task<IEnumerable<PizzaOrder>> AddMultiplePizzaOrdersAsync(IEnumerable<PizzaOrder> pizzaOrders)
+        {   
+            var allToppings = await _toppingsService.GetAllToppingsAsync();
+            List< PizzaOrder > temp = new List< PizzaOrder >();
+
+            foreach (var item in pizzaOrders)
+            {
+                if (item.ToppingIds == null || item.ToppingIds.Count == 0)
+                {
+                    throw new NoToppingsException();
+                }
+                
+                var allToppingIds = allToppings.Select(t => t.Id).ToList();
+
+                var validToppings = new List<PizzaOrderTopping>();
+
+                foreach (var toppingId in item.ToppingIds)
+                {
+                    var existingTopping = allToppings.FirstOrDefault(t => t.Id == toppingId);
+
+                    if (existingTopping == null)
+                    {
+                        throw new InvalidToppingException(new Topping { Id = toppingId });
+                    }
+
+                    validToppings.Add(new PizzaOrderTopping { ToppingId = existingTopping.Id });
+                }
+
+                if (item.Size == PizzaSize.None)
+                {
+                    throw new NoSizeException();
+                }
+                
+                item.PizzaOrderToppings = validToppings;
+                decimal totalCost = CalculatePizzaCost(item.Size, item.PizzaOrderToppings.Count);
+                item.TotalCost = totalCost;
+
+                temp.Add(item);
+            }
+
+            _context.PizzaOrders.AddRange(temp);
+            await _context.SaveChangesAsync();
+
+            return temp;
+        }
+
         public async Task<IEnumerable<PizzaOrder>> GetAllOrdersAsync()
         {
             return await _context.PizzaOrders
-                .Include(po => po.Toppings)
+                .Include(po => po.PizzaOrderToppings)
+                .ThenInclude(pt => pt.Topping)
                 .ToListAsync();
         }
 
+
         public async Task<PizzaOrder> GetPizzaOrderByIdAsync(int id)
         {
-            return await _context.PizzaOrders.Include(o => o.Toppings).FirstOrDefaultAsync(o => o.Id == id);
+            var pizzaOrder = await _context.PizzaOrders
+                .Include(o => o.PizzaOrderToppings)
+                .ThenInclude(pt => pt.Topping)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (pizzaOrder != null)
+            {
+                pizzaOrder.ToppingIds = pizzaOrder.PizzaOrderToppings.Select(pt => pt.ToppingId).ToList();
+            }
+            return pizzaOrder;
         }
 
-        public Task<decimal> EstimateCostAsync(PizzaSize size, List<Topping> toppings)
+        public async Task<decimal> EstimateCostAsync(PizzaSize size, List<int> toppings)
         {
+            var allToppings = await _toppingsService.GetAllToppingsAsync();
+            var allToppingIds = allToppings.Select(t => t.Id).ToHashSet();
+
+            foreach (var toppingId in toppings)
+            {
+                var existingTopping = allToppings.FirstOrDefault(t => t.Id == toppingId);
+
+                if (existingTopping == null)
+                {
+                    throw new InvalidToppingException(new Topping { Id = toppingId });
+                }
+            }
+
             decimal estimatedCost = CalculatePizzaCost(size, toppings.Count);
 
-            return Task.FromResult(estimatedCost);
+            return estimatedCost;
         }
 
         private decimal CalculatePizzaCost(PizzaSize size, int toppingsCount)
         {
+
             decimal baseCost = size switch
             {
-                PizzaSize.Small => 8,
+                PizzaSize.Small => 8m,
                 PizzaSize.Medium => 10m,
-                PizzaSize.Large => 12,
-                _ => throw new ArgumentOutOfRangeException()
+                PizzaSize.Large => 12m,
+                PizzaSize.None => 0m,
+                _ => 0
             };
 
             decimal totalCost = baseCost + toppingsCount;

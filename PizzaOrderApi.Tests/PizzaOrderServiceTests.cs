@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using PizzaOrderApi.Services.Exceptions;
+using PizzaOrderApi.Services.Implementations;
 using PizzaOrderApi.Services.Interfaces;
 using WebBackPresentConn.Models.Entities;
 using WebBackPresentConn.Models.Enums;
@@ -12,7 +13,7 @@ namespace PizzaOrderApi.Tests
     public class PizzaOrderServiceTests
     {
         private readonly PizzaOrderContext _context;
-        private readonly Mock<IToppingsService> _mockToppingsService;
+        private readonly IToppingsService _toppingsService;
         private readonly IPizzaOrderService _pizzaOrderService;
 
         public PizzaOrderServiceTests()
@@ -21,8 +22,17 @@ namespace PizzaOrderApi.Tests
                 .UseInMemoryDatabase(databaseName: "PizzaOrderServiceTests")
                 .Options;
             _context = new PizzaOrderContext(options);
-            _mockToppingsService = new Mock<IToppingsService>();
-            _pizzaOrderService = new PizzaOrderService(_context, _mockToppingsService.Object);
+            _toppingsService = new ToppingsService(_context);
+            _pizzaOrderService = new PizzaOrderService(_context, _toppingsService);
+
+
+            _toppingsService.AddMultipleToppingsAsync (
+                new List<Topping>
+                {
+                    new Topping { Name = "Pepperoni" },
+                    new Topping { Name = "Mushrooms" },
+                    new Topping { Name = "Onions" }
+                });
         }
 
         [Fact]
@@ -31,13 +41,7 @@ namespace PizzaOrderApi.Tests
             // Arrange
             var service = _pizzaOrderService;
             var size = PizzaSize.Medium;
-            var toppings = new List<Topping>
-            {
-                new Topping { Id = 1 },
-                new Topping { Id = 2 },
-                new Topping { Id = 3 },
-                new Topping { Id = 4 }
-            };
+            var toppings = new List<int>{1,2,1,1};
 
             // Act
             var estimatedCost = await service.EstimateCostAsync(size, toppings);
@@ -52,12 +56,7 @@ namespace PizzaOrderApi.Tests
             // Arrange
             var service = _pizzaOrderService;
             var size = PizzaSize.Medium;
-            var toppings = new List<Topping>
-            {
-                new Topping { Id = 1 },
-                new Topping { Id = 2 },
-                new Topping { Id = 3 }
-            };
+            var toppings = new List<int> { 1, 2, 1 };
 
             // Act
             var estimatedCost = await service.EstimateCostAsync(size, toppings);

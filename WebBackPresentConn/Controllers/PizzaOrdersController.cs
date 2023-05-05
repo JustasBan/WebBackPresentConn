@@ -18,7 +18,7 @@ namespace WebBackPresentConn.Controllers
             _pizzaOrderService = pizzaOrderService;
         }
 
-        [HttpPost]
+        [HttpPost("AddPizzaOrder")]
         public async Task<IActionResult> AddPizzaOrder(PizzaOrder pizzaOrder)
         {
             if (pizzaOrder == null || !ModelState.IsValid)
@@ -38,6 +38,32 @@ namespace WebBackPresentConn.Controllers
             catch(ArgumentOutOfRangeException ex)
             {
                 return BadRequest(ex.Message);
+            }
+            catch(InvalidToppingException ex)
+            {
+                return BadRequest($"The topping '{ex.Topping.Id}' doesnt exist.");
+            }
+        }
+
+        [HttpPost("AddMultiplePizzaOrders")]
+        public async Task<IActionResult> AddMultiplePizzaOrders(IEnumerable <PizzaOrder> pizzaOrders)
+        {
+            try
+            {
+                var createdPizzaOrder = await _pizzaOrderService.AddMultiplePizzaOrdersAsync(pizzaOrders);
+                return Ok(createdPizzaOrder);
+            }
+            catch (NoToppingsException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidToppingException ex)
+            {
+                return BadRequest($"The topping '{ex.Topping.Id}' doesnt exist.");
             }
         }
 
@@ -61,19 +87,16 @@ namespace WebBackPresentConn.Controllers
         }
 
         [HttpPost("estimate")]
-        public async Task<IActionResult> EstimateCost(PizzaSize size, List<Topping> toppings)
+        public async Task<IActionResult> EstimateCost(PizzaSize size, List<int> toppings)
         {
             var estimatedCost = await _pizzaOrderService.EstimateCostAsync(size, toppings);
             return Ok(estimatedCost);
         }
 
-        [HttpPost("sizes")]
         [HttpGet("sizes")]
-public IActionResult GetPizzaSizes()
-{
-    return Ok(_pizzaOrderService.GetPizzaSizeNames());
-}
-
-
+        public IActionResult GetPizzaSizes()
+        {
+            return Ok(_pizzaOrderService.GetPizzaSizeNames());
+        }
     }
 }

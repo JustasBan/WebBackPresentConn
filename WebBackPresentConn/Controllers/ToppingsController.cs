@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using PizzaOrderApi.Services.Exceptions;
 using PizzaOrderApi.Services.Interfaces;
 using WebBackPresentConn.Models.Entities;
 using WebBackPresentConn.Services.Interfaces;
@@ -23,16 +24,38 @@ namespace PizzaOrderApi.Controllers
             return Ok(toppings);
         }
 
-        [HttpPost]
+        [HttpPost("AddTopping")]
         public async Task<IActionResult> AddTopping(Topping topping)
         {
-            if (topping == null || !ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
-            }
+                if (topping == null || !ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
-            var createdTopping = await _toppingsService.AddToppingAsync(topping);
-            return CreatedAtAction(nameof(GetAllToppings), new { id = createdTopping.Id }, createdTopping);
+                var createdTopping = await _toppingsService.AddToppingAsync(topping);
+                return CreatedAtAction(nameof(GetAllToppings), new { id = createdTopping.Id }, createdTopping);
+            }
+            catch (InvalidToppingException ex)
+            {
+
+                return BadRequest($"The topping '{ex.Topping.Name}' already exists.");
+            }
+        }
+        
+        [HttpPost("AddMultipleToppings")]
+        public async Task<IActionResult> AddMultipleToppings(IEnumerable<Topping> toppings)
+        {
+            try
+            {
+                var createdToppings = await _toppingsService.AddMultipleToppingsAsync(toppings);
+                return Ok(createdToppings);
+            }
+            catch (InvalidToppingException ex)
+            {
+                return BadRequest($"The topping '{ex.Topping.Name}' already exists.");
+            }
         }
     }
 
