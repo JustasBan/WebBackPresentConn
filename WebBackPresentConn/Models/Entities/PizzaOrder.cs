@@ -11,6 +11,7 @@ namespace WebBackPresentConn.Models.Entities
         public PizzaSize Size { get; set; }
         public decimal TotalCost { get; set; }
         public string Name { get; set; }
+        public DateTime CreatedAt { get; set; }
 
         [NotMapped]
         public List<int> ToppingIds { get; set; }
