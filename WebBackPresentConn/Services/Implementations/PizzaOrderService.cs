@@ -49,7 +49,9 @@ namespace WebBackPresentConn.Services.Implementations
                 throw new NoSizeException();
             }
 
+            pizzaOrder.CreatedAt = DateTime.UtcNow;
             pizzaOrder.PizzaOrderToppings = validToppings;
+
             decimal totalCost = CalculatePizzaCost(pizzaOrder.Size, pizzaOrder.PizzaOrderToppings.Count);
             pizzaOrder.TotalCost = totalCost;
             _context.PizzaOrders.Add(pizzaOrder);
@@ -94,6 +96,8 @@ namespace WebBackPresentConn.Services.Implementations
                 item.PizzaOrderToppings = validToppings;
                 decimal totalCost = CalculatePizzaCost(item.Size, item.PizzaOrderToppings.Count);
                 item.TotalCost = totalCost;
+
+                item.CreatedAt = DateTime.UtcNow;
 
                 temp.Add(item);
             }
