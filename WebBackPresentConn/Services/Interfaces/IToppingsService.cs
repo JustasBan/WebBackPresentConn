@@ -6,5 +6,6 @@ namespace PizzaOrderApi.Services.Interfaces
     {
         Task<IEnumerable<Topping>> GetAllToppingsAsync();
         Task<Topping> AddToppingAsync(Topping topping);
+        Task<IEnumerable<Topping>> AddMultipleToppingsAsync(IEnumerable<Topping> toppings);
     }
 }

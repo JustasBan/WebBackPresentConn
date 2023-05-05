@@ -4,8 +4,11 @@ namespace PizzaOrderApi.Services.Exceptions
 {
     public class InvalidToppingException : Exception
     {
-        public InvalidToppingException(Topping topping) : base($"Invalid topping: {topping.Id}")
+        public InvalidToppingException(Topping topping) : base()
         {
+            Topping = topping;
         }
+
+        public Topping Topping { get; internal set; }
     }
 }
