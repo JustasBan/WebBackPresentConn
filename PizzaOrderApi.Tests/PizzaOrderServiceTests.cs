@@ -1,6 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Moq;
-using PizzaOrderApi.Services.Exceptions;
 using PizzaOrderApi.Services.Implementations;
 using PizzaOrderApi.Services.Interfaces;
 using WebBackPresentConn.Models.Entities;
